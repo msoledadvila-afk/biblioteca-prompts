@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompts Studio PCA · Talento Impulsa</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0f0f14;
+    --surface: #16161e;
+    --card: #1e1e2a;
+    --border: #2a2a3a;
+    --muted: #3a3a50;
+    --gold: #e8b86d;
+    --gold-dim: #c99a50;
+    --gold-glow: rgba(232,184,109,0.15);
+    --teal: #5ec4c4;
+    --text: #e8e8f0;
+    --text-dim: #8888a8;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--ink);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* BG texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 80% 10%, rgba(232,184,109,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 10% 80%, rgba(94,196,196,0.05) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap { position: relative; z-index: 1; max-width: 1000px; margin: 0 auto; padding: 0 20px 80px; }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 36px 0 32px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+
+  .logo-mark {
+    width: 72px; height: 72px;
+    border-radius: 14px;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 0 30px rgba(232,184,109,0.2);
+  }
+
+  .logo-mark img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .header-text h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 24px; font-weight: 800;
+    background: linear-gradient(90deg, var(--gold), var(--teal));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.2;
+  }
+
+  .header-text p {
+    font-size: 13px; color: var(--text-dim);
+    margin-top: 3px; font-weight: 300;
+    letter-spacing: 0.02em;
+  }
+
+  /* TABS CATEGORÍAS */
+  .cat-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+  }
+
+  .cat-tabs {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-bottom: 32px;
+  }
+
+  .cat-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 8px 14px;
+    border-radius: 100px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .cat-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+  .cat-btn.active {
+    background: var(--gold-glow);
+    border-color: var(--gold);
+    color: var(--gold);
+    box-shadow: 0 0 16px rgba(232,184,109,0.1);
+  }
+
+  /* PROMPT GRID */
+  .prompts-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 14px;
+  }
+
+  .prompt-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+    margin-bottom: 36px;
+  }
+
+  .prompt-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .prompt-card:hover {
+    border-color: var(--gold-dim);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+
+  .prompt-card.selected {
+    border-color: var(--gold);
+    background: linear-gradient(135deg, rgba(232,184,109,0.08), var(--card));
+    box-shadow: 0 0 24px rgba(232,184,109,0.12);
+  }
+
+  .prompt-card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px; font-weight: 700;
+    color: var(--text); margin-bottom: 6px;
+    line-height: 1.3;
+  }
+
+  .prompt-card.selected .prompt-card-title { color: var(--gold); }
+
+  .prompt-card-desc {
+    font-size: 12px; color: var(--text-dim);
+    line-height: 1.5; font-weight: 300;
+  }
+
+  /* BUILDER */
+  .builder {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 28px 24px;
+    display: none;
+  }
+
+  .builder.visible { display: block; }
+
+  .builder-header {
+    display: flex; align-items: flex-start;
+    justify-content: space-between; gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .builder-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px; font-weight: 700;
+    color: var(--gold); margin-bottom: 4px;
+  }
+
+  .builder-desc { font-size: 13px; color: var(--text-dim); font-weight: 300; }
+
+  .tag {
+    background: var(--gold-glow);
+    border: 1px solid rgba(232,184,109,0.3);
+    color: var(--gold);
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 100px;
+    white-space: nowrap; flex-shrink: 0;
+  }
+
+  .fields-grid {
+    display: grid; gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .field-group label {
+    display: block;
+    font-family: 'Syne', sans-serif;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 7px;
+  }
+
+  .field-group label span {
+    background: var(--muted);
+    color: var(--text-dim);
+    font-size: 9px; padding: 1px 6px;
+    border-radius: 100px; margin-left: 6px;
+    letter-spacing: 0.05em; font-weight: 600;
+    vertical-align: middle;
+  }
+
+  .field-group input, .field-group textarea, .field-group select {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 300;
+    padding: 10px 14px;
+    transition: border-color 0.2s;
+    resize: vertical;
+    outline: none;
+    line-height: 1.5;
+  }
+
+  .field-group input:focus, .field-group textarea:focus, .field-group select:focus {
+    border-color: var(--gold-dim);
+    box-shadow: 0 0 0 3px rgba(232,184,109,0.08);
+  }
+
+  .field-group input::placeholder, .field-group textarea::placeholder {
+    color: var(--muted);
+  }
+
+  select option { background: var(--surface); }
+
+  /* BUTTONS */
+  .btn-row {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    margin-top: 20px; padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 11px 22px;
+    border-radius: var(--radius-sm);
+    border: none; cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dim) 100%);
+    color: var(--ink);
+    box-shadow: 0 4px 16px rgba(232,184,109,0.25);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(232,184,109,0.35);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+  }
+
+  .btn-ghost:hover { border-color: var(--text-dim); color: var(--text); }
+
+  /* OUTPUT */
+  .output-box {
+    margin-top: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    display: none;
+  }
+
+  .output-box.visible { display: block; }
+
+  .output-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 10px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .output-text {
+    font-size: 13.5px; line-height: 1.7;
+    color: var(--text); white-space: pre-wrap;
+    font-weight: 300;
+  }
+
+  .copy-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'Syne', sans-serif;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 4px 12px; border-radius: 100px;
+    cursor: pointer; transition: all 0.2s;
+  }
+
+  .copy-btn:hover { border-color: var(--teal); color: var(--teal); }
+  .copy-btn.copied { border-color: var(--teal); color: var(--teal); }
+
+  /* LIBRE SECTION */
+  .libre-section {
+    margin-top: 48px;
+    border-top: 1px solid var(--border);
+    padding-top: 40px;
+  }
+
+  .libre-header {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .libre-header h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px; font-weight: 800;
+    color: var(--teal);
+  }
+
+  .libre-header p { font-size: 13px; color: var(--text-dim); font-weight: 300; }
+
+  .cref-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  @media (max-width: 600px) {
+    .cref-grid { grid-template-columns: 1fr; }
+    .prompt-grid { grid-template-columns: 1fr; }
+    header { flex-direction: column; gap: 12px; }
+    .builder { padding: 20px 16px; }
+  }
+
+  /* FOOTER */
+  footer {
+    margin-top: 64px;
+    padding-top: 28px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .cref-legend {
+    display: inline-flex; gap: 24px; flex-wrap: wrap;
+    justify-content: center; margin-bottom: 16px;
+  }
+
+  .cref-item {
+    font-size: 12px; color: var(--text-dim);
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .cref-badge {
+    background: var(--muted);
+    color: var(--gold);
+    font-family: 'Syne', sans-serif;
+    font-size: 11px; font-weight: 800;
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  footer p { font-size: 12px; color: var(--text-dim); margin-top: 8px; }
+  footer strong { color: var(--gold); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo-mark">
+      <img src="data:image/png;base64,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" alt="Talento Impulsa" />
+    </div>
+    <div class="header-text">
+      <h1>Prompts Studio PCA</h1>
+      <p>Talento Impulsa · Sistema C.R.E.F. de construcción de prompts</p>
+    </div>
+  </header>
+
+  <!-- CATEGORÍAS -->
+  <div class="cat-label">Categorías</div>
+  <div class="cat-tabs" id="catTabs"></div>
+
+  <!-- PROMPTS -->
+  <div class="prompts-label" id="promptsLabel">Selecciona una categoría para ver los prompts</div>
+  <div class="prompt-grid" id="promptGrid"></div>
+
+  <!-- BUILDER -->
+  <div class="builder" id="builder">
+    <div class="builder-header">
+      <div>
+        <div class="builder-title" id="builderTitle">—</div>
+        <div class="builder-desc" id="builderDesc">—</div>
+      </div>
+      <div class="tag" id="builderTag">C.R.E.F.</div>
+    </div>
+    <div class="fields-grid" id="fieldsGrid"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="generatePrompt()">✦ Generar Prompt</button>
+      <button class="btn btn-ghost" onclick="resetBuilder()">↺ Reiniciar</button>
+    </div>
+    <div class="output-box" id="outputBox">
+      <div class="output-label">
+        Prompt generado — listo para copiar
+        <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">Copiar</button>
+      </div>
+      <div class="output-text" id="outputText"></div>
+    </div>
+  </div>
+
+  <!-- CONSTRUCTOR LIBRE -->
+  <div class="libre-section">
+    <div class="libre-header">
+      <div>
+        <h2>✦ Constructor Libre C.R.E.F.</h2>
+        <p>Construí cualquier prompt desde cero usando el marco de 4 dimensiones</p>
+      </div>
+    </div>
+    <div class="cref-grid">
+      <div class="field-group">
+        <label>C — Contexto <span>¿Cuál es la situación?</span></label>
+        <textarea id="libreC" rows="4" placeholder="Ej: Soy coordinadora de RR.HH. en una empresa de 200 personas. Estamos en proceso de implementar una nueva política de teletrabajo y necesito comunicar los cambios al equipo."></textarea>
+      </div>
+      <div class="field-group">
+        <label>R — Rol <span>¿Qué papel debe asumir la IA?</span></label>
+        <textarea id="libreR" rows="4" placeholder="Ej: Actuá como un experto en comunicación organizacional con experiencia en gestión del cambio y redacción de documentos corporativos."></textarea>
+      </div>
+      <div class="field-group">
+        <label>E — Especificación <span>¿Qué debe hacer exactamente?</span></label>
+        <textarea id="libreE" rows="4" placeholder="Ej: Redactá un comunicado claro y empático que explique los cambios en la política de teletrabajo, abordando posibles dudas y destacando los beneficios para el equipo."></textarea>
+      </div>
+      <div class="field-group">
+        <label>F — Formato <span>¿Cómo debe presentarse el resultado?</span></label>
+        <textarea id="libreF" rows="4" placeholder="Ej: Texto de entre 200 y 300 palabras, tono formal pero cercano, con párrafos cortos. Incluí un asunto sugerido si es un email."></textarea>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="generateLibre()">✦ Generar Prompt C.R.E.F.</button>
+      <button class="btn btn-ghost" onclick="resetLibre()">↺ Reiniciar</button>
+    </div>
+    <div class="output-box" id="libreOutputBox">
+      <div class="output-label">
+        Prompt C.R.E.F. generado
+        <button class="copy-btn" id="libreCopyBtn" onclick="copyLibre()">Copiar</button>
+      </div>
+      <div class="output-text" id="libreOutputText"></div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="cref-legend">
+      <div class="cref-item"><div class="cref-badge">C</div> Contexto</div>
+      <div class="cref-item"><div class="cref-badge">R</div> Rol</div>
+      <div class="cref-item"><div class="cref-badge">E</div> Especificación</div>
+      <div class="cref-item"><div class="cref-badge">F</div> Formato</div>
+    </div>
+    <p>Biblioteca de Prompts · <strong>Talento Impulsa</strong> · Sistema C.R.E.F.</p>
+    <p style="margin-top:4px; font-size:11px; opacity:.5;">30 prompts · 7 categorías · Constructor libre</p>
+  </footer>
+
+</div>
+
+<script>
+const DATA = {
+  "📧 Emails Difíciles": {
+    prompts: [
+      {
+        title: "Corrección sin conflicto",
+        desc: "Para corregir un error o malentendido de forma profesional sin generar tensión.",
+        fields: [
+          { id: "situacion", label: "Situación o malentendido", placeholder: "Ej: Se envió información incorrecta sobre fechas de pago al equipo", type: "textarea" },
+          { id: "receptor", label: "Receptor del email", placeholder: "Ej: Todo el equipo de ventas" },
+          { id: "tono", label: "Tono deseado", placeholder: "Ej: Profesional, claro y sin culpas" }
+        ],
+        template: (f) => `Actuá como un experto en comunicación corporativa y redacción de emails profesionales.
+
+Contexto: Necesito corregir el siguiente malentendido o error sin generar conflicto ni culpas: "${f.situacion}".
+
+El email va dirigido a: ${f.receptor}.
+
+Tarea: Redactá un email que corrija la situación de manera clara, honesta y constructiva. Debe mantener un tono ${f.tono}, comenzar reconociendo el inconveniente sin dramatizar, ofrecer la información correcta y cerrar con una nota positiva.
+
+Formato: Email completo con asunto, saludo, cuerpo en 2-3 párrafos y cierre cordial.`
+      },
+      {
+        title: "Rechazo con empatía",
+        desc: "Para declinar una solicitud, propuesta o candidatura manteniendo la relación.",
+        fields: [
+          { id: "solicitud", label: "¿Qué se está rechazando?", placeholder: "Ej: Una propuesta de colaboración externa que no encaja con la estrategia actual", type: "textarea" },
+          { id: "receptor", label: "Persona o área que lo solicitó", placeholder: "Ej: Proveedor externo de capacitaciones" },
+          { id: "razon", label: "Razón principal (opcional)", placeholder: "Ej: Presupuesto no disponible para este año" }
+        ],
+        template: (f) => `Actuá como un profesional de comunicaciones con experiencia en manejo de relaciones externas e internas.
+
+Contexto: Debo rechazar la siguiente solicitud o propuesta: "${f.solicitud}". El rechazo va dirigido a: ${f.receptor}. ${f.razon ? `La razón principal es: ${f.razon}.` : ''}
+
+Tarea: Redactá un email de rechazo que sea empático, respetuoso y que mantenga la puerta abierta para futuras oportunidades. No debe sonar definitivo ni frío. Reconocé el esfuerzo de la persona, explicá brevemente la situación y cerrá con una nota constructiva.
+
+Formato: Email completo con asunto sugerido, saludo personalizado, cuerpo de 2-3 párrafos y cierre profesional.`
+      },
+      {
+        title: "Reclamo interno diplomático",
+        desc: "Para expresar una queja o reclamo a otra área sin generar confrontación.",
+        fields: [
+          { id: "problema", label: "El problema o incumplimiento", placeholder: "Ej: El área de sistemas no respondió los tickets hace 2 semanas", type: "textarea" },
+          { id: "area", label: "Área o persona destinataria", placeholder: "Ej: Jefe del área de Sistemas" },
+          { id: "impacto", label: "Impacto que está generando", placeholder: "Ej: Retraso en el onboarding de nuevos ingresos" }
+        ],
+        template: (f) => `Actuá como especialista en comunicación interna con enfoque en resolución de conflictos organizacionales.
+
+Contexto: Necesito hacer un reclamo formal pero diplomático. El problema es: "${f.problema}". Va dirigido a: ${f.area}. El impacto que está generando es: ${f.impacto}.
+
+Tarea: Redactá un email que comunique el reclamo con claridad y firmeza, pero sin generar confrontación. Debe describir el problema con hechos concretos, exponer el impacto en el trabajo, y solicitar una solución o respuesta con fecha estimada.
+
+Formato: Email con asunto descriptivo, cuerpo de 3 párrafos (descripción del problema, impacto, solicitud de acción) y cierre profesional.`
+      },
+      {
+        title: "Pedido de feedback incómodo",
+        desc: "Para solicitar retroalimentación sobre una situación difícil o sensible.",
+        fields: [
+          { id: "situacion", label: "¿Sobre qué necesitás feedback?", placeholder: "Ej: Mi desempeño en el último proyecto que no fue bien recibido", type: "textarea" },
+          { id: "receptor", label: "¿A quién se lo pedís?", placeholder: "Ej: Mi jefe directo o el equipo de liderazgo" },
+          { id: "objetivo", label: "¿Para qué lo necesitás?", placeholder: "Ej: Para mejorar mi forma de presentar propuestas" }
+        ],
+        template: (f) => `Actuá como un coach de comunicación con experiencia en liderazgo y desarrollo profesional.
+
+Contexto: Necesito solicitar feedback sobre una situación difícil: "${f.situacion}". Lo solicito a: ${f.receptor}. Mi objetivo al pedirlo es: ${f.objetivo}.
+
+Tarea: Redactá un email para pedir retroalimentación de manera profesional y con apertura genuina. Debe mostrar disposición al aprendizaje, no sonar defensivo, y hacer preguntas concretas que faciliten una respuesta útil.
+
+Formato: Email breve (máximo 150 palabras), con asunto claro, 2 preguntas específicas de feedback y cierre agradecido.`
+      },
+      {
+        title: "Seguimiento sin molestar",
+        desc: "Para hacer un segundo o tercer recordatorio sin resultar insistente o molesto.",
+        fields: [
+          { id: "pendiente", label: "¿Qué está pendiente?", placeholder: "Ej: Aprobación de presupuesto para la capacitación del Q2", type: "textarea" },
+          { id: "receptor", label: "¿A quién va dirigido?", placeholder: "Ej: Gerencia de Finanzas" },
+          { id: "urgencia", label: "Nivel de urgencia", placeholder: "Ej: Necesito respuesta antes del 30 para reservar los cupos" }
+        ],
+        template: (f) => `Actuá como un profesional experto en comunicación asertiva y gestión de procesos organizacionales.
+
+Contexto: Necesito hacer un seguimiento sobre algo que está pendiente: "${f.pendiente}". Va dirigido a: ${f.receptor}. La urgencia es: ${f.urgencia}.
+
+Tarea: Redactá un email de seguimiento que sea amable pero directo. No debe sonar como una presión, sino como un recordatorio útil que facilita la toma de decisión. Debe mencionar brevemente el contexto, la acción esperada y la fecha límite si existe.
+
+Formato: Email muy breve (máximo 100 palabras), con asunto tipo "Seguimiento: [tema]", tono cordial y claro.`
+      },
+      {
+        title: "Comunicación de baja o salida",
+        desc: "Para informar la desvinculación de un colaborador con respeto y claridad.",
+        fields: [
+          { id: "contexto", label: "Contexto de la salida", placeholder: "Ej: Fin de contrato por vencimiento de proyecto temporal", type: "textarea" },
+          { id: "audiencia", label: "¿A quién se comunica?", placeholder: "Ej: Al equipo directo del colaborador" },
+          { id: "nombre", label: "Nombre del colaborador (opcional)", placeholder: "Ej: María González" }
+        ],
+        template: (f) => `Actuá como un especialista en comunicación de RR.HH. con experiencia en gestión del cambio y comunicación sensible.
+
+Contexto: Debo comunicar la salida de ${f.nombre ? f.nombre : 'un colaborador/a'}. El motivo es: "${f.contexto}". Esta comunicación va dirigida a: ${f.audiencia}.
+
+Tarea: Redactá un email que comunique la desvinculación con respeto, claridad y sin generar angustia en el equipo. Debe agradecer la contribución de la persona, explicar brevemente la situación si corresponde, y orientar al equipo sobre los próximos pasos.
+
+Formato: Email con asunto discreto, tono cálido y profesional, párrafos cortos, máximo 200 palabras.`
+      }
+    ]
+  },
+  "📄 Síntesis Documental": {
+    prompts: [
+      {
+        title: "Resumen ejecutivo",
+        desc: "Para condensar un documento extenso en sus puntos más relevantes.",
+        fields: [
+          { id: "documento", label: "Tipo de documento a resumir", placeholder: "Ej: Informe anual de desempeño del área de RR.HH." },
+          { id: "contenido", label: "Pegá el texto o describí el contenido", placeholder: "Pegá aquí el texto o describí los temas principales...", type: "textarea" },
+          { id: "audiencia", label: "¿Para quién es el resumen?", placeholder: "Ej: Gerencia y directivos que necesitan decisiones rápidas" }
+        ],
+        template: (f) => `Actuá como analista de documentos con experiencia en síntesis ejecutiva para entornos corporativos.
+
+Contexto: Debo resumir el siguiente ${f.documento} para una audiencia de ${f.audiencia}.
+
+Contenido o texto a sintetizar:
+"${f.contenido}"
+
+Tarea: Generá un resumen ejecutivo que capture los puntos clave, hallazgos principales y recomendaciones o próximos pasos si los hubiera. El resumen debe poder leerse en menos de 2 minutos.
+
+Formato: Máximo 250 palabras, uso de bullets para puntos clave, sin tecnicismos innecesarios, lenguaje directo y orientado a la acción.`
+      },
+      {
+        title: "Síntesis de reunión o workshop",
+        desc: "Para transformar notas dispersas en un documento ordenado y accionable.",
+        fields: [
+          { id: "reunion", label: "Tipo y nombre de la reunión", placeholder: "Ej: Workshop de planificación estratégica Q3" },
+          { id: "notas", label: "Notas o puntos registrados", placeholder: "Pegá las notas tal como fueron tomadas...", type: "textarea" },
+          { id: "participantes", label: "Participantes o áreas involucradas", placeholder: "Ej: RR.HH., Operaciones, Gerencia General" }
+        ],
+        template: (f) => `Actuá como secretaria ejecutiva con experiencia en sistematización de reuniones y documentación corporativa.
+
+Contexto: Debo organizar las notas de la siguiente reunión: "${f.reunion}". Participantes: ${f.participantes}.
+
+Notas originales:
+"${f.notas}"
+
+Tarea: Transformá estas notas en una síntesis ordenada que incluya: temas tratados, decisiones tomadas, acuerdos y próximos pasos con responsables si se mencionan.
+
+Formato: Documento con secciones claras (Temas, Decisiones, Próximos pasos), uso de bullets, lenguaje formal y conciso.`
+      },
+      {
+        title: "Extracción de accionables",
+        desc: "Para identificar y listar tareas concretas dentro de un texto o conversación.",
+        fields: [
+          { id: "texto", label: "Texto, email o conversación a analizar", placeholder: "Pegá el texto del que querés extraer tareas y accionables...", type: "textarea" },
+          { id: "formato", label: "¿Cómo necesitás la lista?", placeholder: "Ej: Ordenada por responsable, con fechas límite si las hay" }
+        ],
+        template: (f) => `Actuá como asistente de proyectos con experiencia en gestión de tareas y seguimiento de compromisos organizacionales.
+
+Contexto: Necesito extraer todos los accionables, tareas y compromisos del siguiente texto:
+"${f.texto}"
+
+Tarea: Identificá y listá todas las acciones concretas mencionadas, quién es responsable de cada una (si se indica) y si hay fechas o plazos asociados.
+
+Formato: ${f.formato || 'Lista numerada con: Acción · Responsable (si aplica) · Fecha límite (si aplica). Ordenada por prioridad o por área.'}`
+      },
+      {
+        title: "Comparativa de opciones",
+        desc: "Para analizar y comparar dos o más alternativas de forma estructurada.",
+        fields: [
+          { id: "opciones", label: "¿Qué opciones estás comparando?", placeholder: "Ej: Proveedor A vs Proveedor B para capacitaciones de liderazgo", type: "textarea" },
+          { id: "criterios", label: "Criterios de evaluación", placeholder: "Ej: Costo, cobertura, modalidad, referencias, flexibilidad" },
+          { id: "objetivo", label: "¿Para qué sirve esta comparativa?", placeholder: "Ej: Tomar una decisión de contratación antes del 15 de marzo" }
+        ],
+        template: (f) => `Actuá como consultor de análisis estratégico con experiencia en evaluación de proveedores y toma de decisiones organizacionales.
+
+Contexto: Necesito comparar las siguientes opciones: "${f.opciones}". El objetivo de esta comparativa es: ${f.objetivo}.
+
+Tarea: Analizá y compará las opciones usando los siguientes criterios: ${f.criterios}. Presentá las fortalezas y debilidades de cada una, y si es posible, indicá cuál sería la recomendación justificada.
+
+Formato: Tabla comparativa con los criterios como filas y las opciones como columnas, seguida de un párrafo con análisis y recomendación final.`
+      },
+      {
+        title: "Simplificación de texto técnico",
+        desc: "Para traducir lenguaje técnico, legal o complejo a lenguaje accesible.",
+        fields: [
+          { id: "texto", label: "Texto técnico a simplificar", placeholder: "Pegá aquí el texto que necesitás simplificar...", type: "textarea" },
+          { id: "audiencia", label: "Audiencia que debe entenderlo", placeholder: "Ej: Personal operativo sin formación jurídica" },
+          { id: "objetivo", label: "¿Para qué se va a usar?", placeholder: "Ej: Socializar una nueva política interna" }
+        ],
+        template: (f) => `Actuá como especialista en comunicación organizacional con habilidad para traducir lenguaje técnico a términos comprensibles para cualquier persona.
+
+Contexto: Necesito simplificar el siguiente texto para que pueda ser entendido por: ${f.audiencia}. Se usará para: ${f.objetivo}.
+
+Texto original:
+"${f.texto}"
+
+Tarea: Reescribí el texto en lenguaje claro y accesible, manteniendo el significado original. Eliminá jerga innecesaria, dividí oraciones largas y usá ejemplos si ayudan a clarificar conceptos.
+
+Formato: Texto continuo en párrafos cortos, mismo orden que el original, sin términos técnicos sin explicar.`
+      }
+    ]
+  },
+  "📢 Comunicados Oficiales": {
+    prompts: [
+      {
+        title: "Comunicado de cambio organizacional",
+        desc: "Para anunciar reestructuraciones, fusiones o cambios de gestión.",
+        fields: [
+          { id: "cambio", label: "¿Qué cambio se está comunicando?", placeholder: "Ej: Reorganización del área comercial con nuevas líneas de reporte", type: "textarea" },
+          { id: "audiencia", label: "¿A quiénes va dirigido?", placeholder: "Ej: Todo el personal de la empresa" },
+          { id: "vigencia", label: "¿Cuándo entra en vigencia?", placeholder: "Ej: A partir del 1 de abril de 2025" }
+        ],
+        template: (f) => `Actuá como director de comunicaciones institucionales con experiencia en gestión del cambio organizacional.
+
+Contexto: Debo redactar un comunicado oficial para anunciar el siguiente cambio: "${f.cambio}". Va dirigido a: ${f.audiencia}. Vigencia: ${f.vigencia}.
+
+Tarea: Redactá un comunicado formal que explique el cambio con claridad, justifique brevemente las razones, indique la fecha de implementación y transmita confianza y continuidad en el proceso.
+
+Formato: Comunicado oficial con membrete de área (RR.HH. o Dirección), asunto, cuerpo de 3 párrafos (anuncio, justificación, próximos pasos) y firma institucional.`
+      },
+      {
+        title: "Convocatoria oficial a evento",
+        desc: "Para invitar formalmente a reuniones, capacitaciones o eventos institucionales.",
+        fields: [
+          { id: "evento", label: "Nombre y tipo de evento", placeholder: "Ej: Jornada de formación en liderazgo inclusivo" },
+          { id: "fecha", label: "Fecha, hora y lugar", placeholder: "Ej: Miércoles 12 de marzo, 9 a 13hs, Sala de Conferencias B" },
+          { id: "audiencia", label: "¿A quiénes está dirigido?", placeholder: "Ej: Coordinadores y líderes de equipo de todas las áreas" },
+          { id: "detalle", label: "Información adicional", placeholder: "Ej: Incluir si es obligatorio, si hay cupos, cómo confirmar asistencia" }
+        ],
+        template: (f) => `Actuá como profesional de comunicación institucional con experiencia en gestión de eventos corporativos.
+
+Contexto: Debo redactar una convocatoria oficial para: "${f.evento}".
+- Fecha y lugar: ${f.fecha}
+- Destinatarios: ${f.audiencia}
+- Información adicional: ${f.detalle}
+
+Tarea: Redactá una convocatoria clara, motivadora y profesional que incluya todos los datos relevantes del evento y comunique el valor de participar.
+
+Formato: Comunicado con asunto atractivo, párrafo de presentación, datos logísticos organizados y llamada a la acción para confirmar asistencia.`
+      },
+      {
+        title: "Política o norma interna",
+        desc: "Para redactar o comunicar una nueva política o procedimiento de forma clara.",
+        fields: [
+          { id: "politica", label: "¿Qué política o norma se comunica?", placeholder: "Ej: Nueva política de uso responsable de dispositivos corporativos", type: "textarea" },
+          { id: "alcance", label: "¿A quién aplica?", placeholder: "Ej: Todo el personal con equipamiento asignado por la empresa" },
+          { id: "vigencia", label: "Vigencia y contacto para consultas", placeholder: "Ej: Vigente desde el 1 de mayo. Consultas a RR.HH." }
+        ],
+        template: (f) => `Actuá como especialista en comunicación normativa con experiencia en redacción de políticas organizacionales.
+
+Contexto: Debo comunicar la siguiente política o norma: "${f.politica}". Aplica a: ${f.alcance}. ${f.vigencia}.
+
+Tarea: Redactá un comunicado que presente la política de forma clara, explique su propósito, describa los principales lineamientos e indique cómo proceder ante consultas o incumplimientos.
+
+Formato: Documento con título oficial, secciones (Propósito, Alcance, Lineamientos principales, Vigencia, Contacto), lenguaje claro y accesible.`
+      },
+      {
+        title: "Reconocimiento institucional",
+        desc: "Para destacar logros, aniversarios o contribuciones de personas o equipos.",
+        fields: [
+          { id: "persona_equipo", label: "¿Quién o quiénes se reconocen?", placeholder: "Ej: El equipo de atención al cliente por el logro de metas Q1" },
+          { id: "logro", label: "¿Qué lograron o por qué se reconocen?", placeholder: "Ej: Superaron en un 30% los indicadores de satisfacción del trimestre", type: "textarea" },
+          { id: "audiencia", label: "¿A quién va dirigido el comunicado?", placeholder: "Ej: A toda la organización" }
+        ],
+        template: (f) => `Actuá como director de cultura organizacional con experiencia en comunicación de reconocimientos y construcción de clima laboral positivo.
+
+Contexto: Debo redactar un comunicado de reconocimiento institucional para: ${f.persona_equipo}. El motivo es: "${f.logro}". Va dirigido a: ${f.audiencia}.
+
+Tarea: Redactá un comunicado cálido y genuino que celebre el logro, destaque el impacto de este reconocimiento en la organización y transmita el orgullo institucional de forma auténtica.
+
+Formato: Comunicado breve (máximo 200 palabras), tono inspirador y humano, con datos concretos del logro y cierre motivador.`
+      },
+      {
+        title: "Comunicado de crisis o situación crítica",
+        desc: "Para informar sobre situaciones urgentes o delicadas con control y claridad.",
+        fields: [
+          { id: "situacion", label: "¿Qué situación debe comunicarse?", placeholder: "Ej: Falla en el sistema de pagos que afectó al 20% del personal", type: "textarea" },
+          { id: "acciones", label: "¿Qué acciones se están tomando?", placeholder: "Ej: El área de IT está trabajando en la solución, se espera resolución en 48hs" },
+          { id: "audiencia", label: "¿A quién va dirigido?", placeholder: "Ej: A todo el personal afectado" }
+        ],
+        template: (f) => `Actuá como especialista en comunicación de crisis con experiencia en manejo de situaciones críticas en entornos organizacionales.
+
+Contexto: Debo comunicar la siguiente situación crítica: "${f.situacion}". Va dirigido a: ${f.audiencia}.
+Acciones en curso: ${f.acciones}.
+
+Tarea: Redactá un comunicado que informe la situación con transparencia, sin generar pánico, transmita control institucional y explique claramente qué se está haciendo y cuándo habrá novedades.
+
+Formato: Comunicado urgente con asunto claro, párrafos cortos, sección de acciones en curso y próximo comunicado de actualización si aplica. Tono calmo y firme.`
+      }
+    ]
+  },
+  "💭 Gestión de Emociones": {
+    prompts: [
+      {
+        title: "Conversación difícil con colaborador",
+        desc: "Para preparar un diálogo sobre desempeño, actitud o situaciones personales.",
+        fields: [
+          { id: "situacion", label: "¿Qué situación necesitás abordar?", placeholder: "Ej: El colaborador llegó tarde reiteradamente y su actitud fue hostil en reuniones", type: "textarea" },
+          { id: "objetivo", label: "¿Qué resultado esperás de la conversación?", placeholder: "Ej: Que comprenda el impacto de su comportamiento y se comprometa a cambiar" },
+          { id: "relacion", label: "Tu rol y relación con esa persona", placeholder: "Ej: Soy su jefe directo, llevamos 2 años trabajando juntos" }
+        ],
+        template: (f) => `Actuá como coach ejecutivo con especialización en comunicación no violenta y liderazgo empático.
+
+Contexto: Debo tener una conversación difícil con un colaborador sobre: "${f.situacion}". Soy ${f.relacion}. Mi objetivo es: ${f.objetivo}.
+
+Tarea: Ayudame a preparar esta conversación. Incluí:
+1. Cómo abrir el diálogo de forma empática
+2. Cómo describir la situación con hechos, sin juicios
+3. Preguntas clave para entender la perspectiva del colaborador
+4. Cómo expresar el impacto y lo que se espera de aquí en adelante
+5. Cómo cerrar con un acuerdo y seguimiento
+
+Formato: Guía estructurada con los 5 pasos, lenguaje práctico y ejemplos de frases concretas.`
+      },
+      {
+        title: "Manejo de conflicto entre personas",
+        desc: "Para mediar o intervenir en una situación de tensión entre dos o más colaboradores.",
+        fields: [
+          { id: "conflicto", label: "¿Cuál es el conflicto?", placeholder: "Ej: Dos integrantes del equipo tienen una disputa por el manejo de un cliente compartido", type: "textarea" },
+          { id: "partes", label: "¿Quiénes están involucrados?", placeholder: "Ej: Dos integrantes del mismo equipo comercial, mismo nivel jerárquico" },
+          { id: "mi_rol", label: "¿Cuál es tu rol en esta situación?", placeholder: "Ej: Soy la coordinadora y necesito mediar de forma neutral" }
+        ],
+        template: (f) => `Actuá como mediador organizacional con experiencia en resolución de conflictos interpersonales en el trabajo.
+
+Contexto: Existe un conflicto entre ${f.partes}. La situación es: "${f.conflicto}". Mi rol: ${f.mi_rol}.
+
+Tarea: Diseñá un plan de intervención que incluya:
+1. Cómo escuchar a cada parte por separado
+2. Preguntas para entender intereses subyacentes (no solo posiciones)
+3. Cómo facilitar una conversación conjunta
+4. Propuestas de acuerdo mutuo
+5. Cómo hacer seguimiento del acuerdo
+
+Formato: Plan de mediación en 5 etapas con preguntas guía y ejemplos de frases para cada momento.`
+      },
+      {
+        title: "Feedback negativo con impacto positivo",
+        desc: "Para dar retroalimentación crítica que motive mejora en lugar de generar resistencia.",
+        fields: [
+          { id: "situacion", label: "¿Qué comportamiento o resultado hay que feedbackear?", placeholder: "Ej: El informe entregado tenía errores graves y fue presentado sin revisar", type: "textarea" },
+          { id: "persona", label: "¿A quién se lo das?", placeholder: "Ej: Colaboradora con 6 meses en el equipo, muy comprometida pero poco metódica" },
+          { id: "objetivo", label: "¿Qué querés lograr con el feedback?", placeholder: "Ej: Que incorpore una rutina de revisión antes de entregar trabajo" }
+        ],
+        template: (f) => `Actuá como líder con formación en psicología organizacional y experiencia en desarrollo de personas.
+
+Contexto: Debo dar feedback negativo a ${f.persona} sobre: "${f.situacion}". Mi objetivo es: ${f.objetivo}.
+
+Tarea: Ayudame a estructurar este feedback de forma que sea honesto, específico, orientado a la mejora y que no destruya la motivación. Incluí cómo abrir, cómo describir el impacto sin atacar a la persona, cómo escuchar su perspectiva y cómo acordar un plan de mejora.
+
+Formato: Script de conversación con fases claras, ejemplos de frases específicas y errores comunes a evitar.`
+      },
+      {
+        title: "Comunicación de una decisión impopular",
+        desc: "Para transmitir una decisión que no será bien recibida por el equipo.",
+        fields: [
+          { id: "decision", label: "¿Qué decisión hay que comunicar?", placeholder: "Ej: Reducción de beneficios no monetarios por restricciones presupuestarias", type: "textarea" },
+          { id: "audiencia", label: "¿A quién se comunica?", placeholder: "Ej: Todo el equipo de 40 personas" },
+          { id: "contexto", label: "Contexto que explica la decisión", placeholder: "Ej: La empresa atraviesa un período de ajuste por caída en ventas del 25%" }
+        ],
+        template: (f) => `Actuá como comunicador organizacional con experiencia en liderazgo en situaciones de cambio y adversidad.
+
+Contexto: Debo comunicar la siguiente decisión impopular: "${f.decision}" a ${f.audiencia}. El contexto que la explica es: ${f.contexto}.
+
+Tarea: Redactá una comunicación que transmita la decisión con honestidad, explique el razonamiento sin excusas, reconozca el impacto en las personas y mantenga la confianza en el liderazgo. Debe dejar espacio para preguntas y no sonar defensivo.
+
+Formato: Discurso o texto de 300 palabras máximo, estructurado en: reconocimiento de la situación, decisión y razones, impacto y acciones de acompañamiento, cierre que apele a la confianza colectiva.`
+      }
+    ]
+  },
+  "📊 Estructuración de Datos": {
+    prompts: [
+      {
+        title: "Armado de dashboard narrativo",
+        desc: "Para transformar datos e indicadores en una narrativa comprensible para directivos.",
+        fields: [
+          { id: "datos", label: "Datos o indicadores disponibles", placeholder: "Ej: Ausentismo: 4.2%. Rotación: 12% anual. Headcount: 320 personas. NPS interno: 62.", type: "textarea" },
+          { id: "audiencia", label: "¿Para quién es el análisis?", placeholder: "Ej: Directorio y gerencia general en reunión mensual" },
+          { id: "periodo", label: "Período analizado", placeholder: "Ej: Primer trimestre 2025" }
+        ],
+        template: (f) => `Actuá como analista de datos de RR.HH. con experiencia en storytelling con datos para audiencias no técnicas.
+
+Contexto: Tengo los siguientes datos del período ${f.periodo}: "${f.datos}". El análisis es para: ${f.audiencia}.
+
+Tarea: Construí una narrativa analítica que explique qué significan estos datos, qué está funcionando bien, qué requiere atención y cuál es la recomendación. Usá los números para contar una historia, no para listarlos.
+
+Formato: Texto de 300-400 palabras dividido en: Situación actual, Señales positivas, Alertas o áreas de mejora, Recomendaciones. Lenguaje accesible para no especialistas en RRHH.`
+      },
+      {
+        title: "Diseño de encuesta o relevamiento",
+        desc: "Para crear preguntas efectivas para medir clima, satisfacción o necesidades.",
+        fields: [
+          { id: "objetivo", label: "¿Qué querés medir o conocer?", placeholder: "Ej: Nivel de satisfacción con el regreso al trabajo presencial" },
+          { id: "audiencia", label: "¿A quiénes encuestás?", placeholder: "Ej: 80 personas del área administrativa con perfil administrativo" },
+          { id: "formato", label: "Formato preferido", placeholder: "Ej: Máximo 10 preguntas, combinación de escala 1-5 y preguntas abiertas" }
+        ],
+        template: (f) => `Actuá como especialista en investigación organizacional con experiencia en diseño de encuestas y análisis de clima laboral.
+
+Contexto: Quiero diseñar una encuesta para medir: "${f.objetivo}". Estará dirigida a: ${f.audiencia}.
+
+Tarea: Diseñá un cuestionario con preguntas claras, no tendenciosas, que capturen tanto datos cuantitativos como percepciones cualitativas. Asegurate de cubrir las dimensiones relevantes del tema.
+
+Formato: ${f.formato}. Incluí instrucciones breves de inicio y una pregunta abierta final del tipo "¿Hay algo más que quieras compartir?".`
+      },
+      {
+        title: "Análisis de texto libre en respuestas",
+        desc: "Para extraer patrones y temas de respuestas cualitativas o comentarios.",
+        fields: [
+          { id: "respuestas", label: "Pegá las respuestas o comentarios", placeholder: "Pegá aquí los comentarios abiertos que necesitás analizar...", type: "textarea" },
+          { id: "pregunta", label: "¿Cuál fue la pregunta original?", placeholder: "Ej: ¿Qué mejorarías del proceso de onboarding?" },
+          { id: "uso", label: "¿Para qué vas a usar este análisis?", placeholder: "Ej: Para presentar resultados al área de formación" }
+        ],
+        template: (f) => `Actuá como analista cualitativo con experiencia en análisis temático de datos abiertos en contextos organizacionales.
+
+Contexto: Tengo respuestas abiertas a la pregunta: "${f.pregunta}". El análisis se usará para: ${f.uso}.
+
+Respuestas a analizar:
+"${f.respuestas}"
+
+Tarea: Identificá los temas o categorías emergentes más frecuentes, el tono predominante (positivo, negativo, mixto) y las menciones más recurrentes. Sintetizá los hallazgos en conclusiones accionables.
+
+Formato: Sección de temas principales (top 3-5), frecuencia relativa, ejemplos representativos y recomendaciones derivadas del análisis.`
+      },
+      {
+        title: "Informe de indicadores para reporte",
+        desc: "Para redactar la interpretación narrativa de un tablero de KPIs.",
+        fields: [
+          { id: "kpis", label: "Indicadores y sus valores", placeholder: "Ej: Rotación voluntaria: 8% (meta: 6%). Tiempo de cobertura: 22 días (meta: 15). Satisfacción de selección: 7.8/10.", type: "textarea" },
+          { id: "contexto", label: "Contexto del período", placeholder: "Ej: Trimestre con alta demanda de búsquedas por expansión" },
+          { id: "receptor", label: "¿A quién va el informe?", placeholder: "Ej: Gerencia de RR.HH. para reunión de comité" }
+        ],
+        template: (f) => `Actuá como Business Partner de RR.HH. con experiencia en elaboración de reportes ejecutivos y análisis de indicadores.
+
+Contexto: Debo redactar el análisis narrativo de los siguientes KPIs del período. Contexto del período: ${f.contexto}. Destinatario: ${f.receptor}.
+
+Indicadores:
+"${f.kpis}"
+
+Tarea: Redactá la interpretación narrativa de estos indicadores: qué explica cada resultado, qué está dentro de meta y qué no, qué factores contextuales inciden y cuáles son los focos de acción para el próximo período.
+
+Formato: Texto fluido de 250-350 palabras, con mención explícita de los indicadores y su relación entre sí. Cerrá con un párrafo de prioridades.`
+      }
+    ]
+  },
+  "📝 Actas y Minutas": {
+    prompts: [
+      {
+        title: "Acta de reunión de equipo",
+        desc: "Para formalizar los acuerdos y compromisos de una reunión de trabajo.",
+        fields: [
+          { id: "reunion", label: "Datos de la reunión", placeholder: "Ej: Reunión de equipo comercial, martes 11/03, 10hs, modalidad presencial" },
+          { id: "participantes", label: "Participantes", placeholder: "Ej: Laura García (coord.), Martín López, Ana Torres, Pablo Ruiz" },
+          { id: "notas", label: "Notas o puntos tratados", placeholder: "Pegá las notas tal como las tomaste...", type: "textarea" }
+        ],
+        template: (f) => `Actuá como asistente administrativa con experiencia en redacción de actas y documentación de reuniones corporativas.
+
+Contexto: Debo redactar el acta formal de la siguiente reunión: ${f.reunion}. Participantes: ${f.participantes}.
+
+Notas y puntos tratados:
+"${f.notas}"
+
+Tarea: Redactá un acta formal que incluya los puntos tratados en orden, las decisiones tomadas, los acuerdos y compromisos con responsables y fechas si se mencionaron.
+
+Formato: Documento con encabezado (fecha, hora, asistentes, lugar), numeración por punto del orden del día, sección de Acuerdos y Compromisos, firma al pie. Lenguaje formal y tercera persona.`
+      },
+      {
+        title: "Minuta ejecutiva",
+        desc: "Para documentar lo esencial de una reunión de directivos en formato conciso.",
+        fields: [
+          { id: "reunion", label: "Tipo de reunión y fecha", placeholder: "Ej: Reunión de comité de dirección, 14 de marzo de 2025" },
+          { id: "participantes", label: "Participantes y cargos", placeholder: "Ej: CEO, Gerente de RR.HH., Gerente Financiero, Gerente Comercial" },
+          { id: "temas", label: "Temas tratados y resoluciones", placeholder: "Describí los temas y lo que se resolvió en cada uno...", type: "textarea" }
+        ],
+        template: (f) => `Actuá como secretaria ejecutiva de alta dirección con experiencia en documentación de reuniones de comité directivo.
+
+Contexto: Debo redactar una minuta ejecutiva de: ${f.reunion}. Participantes: ${f.participantes}.
+
+Temas y resoluciones:
+"${f.temas}"
+
+Tarea: Redactá una minuta concisa y formal que capture lo esencial: qué se trató, qué se decidió y qué próximas acciones se definieron. Sin detalles innecesarios, orientada a la acción.
+
+Formato: Máximo 1 página. Encabezado formal, bullets por tema con sub-ítem de resolución, tabla de próximas acciones con responsable y fecha. Tono ejecutivo y directo.`
+      },
+      {
+        title: "Registro de compromisos con seguimiento",
+        desc: "Para documentar acuerdos con responsables y fechas de forma clara y trazable.",
+        fields: [
+          { id: "reunion", label: "Reunión de origen", placeholder: "Ej: Reunión de planificación de formación anual, 18/03/2025" },
+          { id: "compromisos", label: "Lista de compromisos asumidos", placeholder: "Ej: Ana: enviar propuesta de capacitadores antes del 25/03. Carlos: confirmar presupuesto disponible. Laura: coordinar fechas con áreas.", type: "textarea" },
+          { id: "responsable", label: "Responsable de hacer el seguimiento", placeholder: "Ej: Coordinación de RR.HH." }
+        ],
+        template: (f) => `Actuá como coordinadora de proyectos con experiencia en gestión de compromisos y seguimiento de acuerdos organizacionales.
+
+Contexto: Debo formalizar el registro de compromisos surgidos de: "${f.reunion}". El seguimiento estará a cargo de: ${f.responsable}.
+
+Compromisos registrados:
+"${f.compromisos}"
+
+Tarea: Organizá estos compromisos en un documento de seguimiento claro, con responsable, acción concreta y fecha límite. Agregá un campo de estado (Pendiente/En proceso/Completado) para uso posterior.
+
+Formato: Tabla con columnas: N°, Compromiso, Responsable, Fecha límite, Estado. Encabezado con datos de la reunión. Footer con próxima fecha de revisión si aplica.`
+      }
+    ]
+  },
+  "✍️ Corrección y Estilo": {
+    prompts: [
+      {
+        title: "Corrección y mejora de redacción",
+        desc: "Para revisar un texto y mejorar su claridad, coherencia y profesionalismo.",
+        fields: [
+          { id: "texto", label: "Texto a corregir", placeholder: "Pegá aquí el texto que querés mejorar...", type: "textarea" },
+          { id: "tono", label: "Tono o estilo deseado", placeholder: "Ej: Formal pero accesible, sin tecnicismos" },
+          { id: "uso", label: "¿Para qué se va a usar?", placeholder: "Ej: Email a todo el personal, comunicado interno, informe a directivos" }
+        ],
+        template: (f) => `Actuá como editor profesional con experiencia en corrección de textos corporativos y comunicación institucional.
+
+Contexto: Necesito corregir y mejorar el siguiente texto que se usará para: ${f.uso}. El tono deseado es: ${f.tono}.
+
+Texto original:
+"${f.texto}"
+
+Tarea: Corregí errores gramaticales, ortográficos y de puntuación. Mejorá la claridad, fluidez y estructura del texto. Ajustá el registro al tono indicado sin perder el sentido original. Si hay ideas confusas, reformulalas.
+
+Formato: Presentá primero el texto corregido completo, y luego una lista breve de los principales cambios realizados y por qué.`
+      },
+      {
+        title: "Adaptación de tono y registro",
+        desc: "Para reescribir un texto ajustando el nivel de formalidad según la audiencia.",
+        fields: [
+          { id: "texto", label: "Texto original", placeholder: "Pegá el texto que querés adaptar...", type: "textarea" },
+          { id: "tono_actual", label: "¿Cuál es el tono actual?", placeholder: "Ej: Muy técnico y formal" },
+          { id: "tono_deseado", label: "¿Cuál es el tono que necesitás?", placeholder: "Ej: Cercano, humano y motivador, pero profesional" }
+        ],
+        template: (f) => `Actuá como escritor corporativo con experiencia en adaptación de contenidos para diferentes audiencias y contextos organizacionales.
+
+Contexto: Tengo un texto con tono ${f.tono_actual} que necesito transformar a un tono ${f.tono_deseado}.
+
+Texto original:
+"${f.texto}"
+
+Tarea: Reescribí el texto completo manteniendo el mensaje y los datos originales, pero ajustando completamente el tono, el vocabulario y la estructura a lo solicitado. No es una corrección menor, es una reescritura de registro.
+
+Formato: Texto reescrito completo, seguido de una nota breve sobre los principales cambios de tono aplicados.`
+      },
+      {
+        title: "Unificación de estilo en documento",
+        desc: "Para hacer coherente el estilo de un texto que fue escrito por varias personas.",
+        fields: [
+          { id: "texto", label: "Texto a unificar", placeholder: "Pegá aquí el documento o fragmento con diferentes estilos...", type: "textarea" },
+          { id: "estilo", label: "Estilo al que debe converger", placeholder: "Ej: Formal, tercera persona, oraciones cortas, sin voz pasiva" },
+          { id: "tipo", label: "Tipo de documento", placeholder: "Ej: Informe de gestión anual para presentar a directorio" }
+        ],
+        template: (f) => `Actuá como editor jefe con experiencia en unificación de estilos y coherencia editorial en documentos corporativos.
+
+Contexto: Debo unificar el estilo de este ${f.tipo} que fue escrito por múltiples autores. El estilo al que debe converger es: ${f.estilo}.
+
+Texto a unificar:
+"${f.texto}"
+
+Tarea: Reescribí el documento completo unificando el estilo, la persona gramatical, el vocabulario y la extensión de las oraciones. Mantenélo coherente de principio a fin sin perder información.
+
+Formato: Documento reescrito completo con el estilo unificado solicitado. Al final, listá los principales patrones de inconsistencia que encontraste.`
+      }
+    ]
+  }
+};
+
+let selectedCategory = null;
+let selectedPrompt = null;
+
+function init() {
+  const tabs = document.getElementById('catTabs');
+  Object.keys(DATA).forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'cat-btn';
+    btn.textContent = cat;
+    btn.onclick = () => selectCategory(cat);
+    tabs.appendChild(btn);
+  });
+}
+
+function selectCategory(cat) {
+  selectedCategory = cat;
+  selectedPrompt = null;
+  document.getElementById('builder').classList.remove('visible');
+  document.getElementById('outputBox').classList.remove('visible');
+
+  document.querySelectorAll('.cat-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.textContent === cat);
+  });
+
+  const grid = document.getElementById('promptGrid');
+  const label = document.getElementById('promptsLabel');
+  const prompts = DATA[cat].prompts;
+
+  label.textContent = `${prompts.length} prompts en ${cat}`;
+  grid.innerHTML = '';
+
+  prompts.forEach((p, i) => {
+    const card = document.createElement('div');
+    card.className = 'prompt-card';
+    card.innerHTML = `<div class="prompt-card-title">${p.title}</div><div class="prompt-card-desc">${p.desc}</div>`;
+    card.onclick = () => selectPrompt(cat, i, card);
+    grid.appendChild(card);
+  });
+}
+
+function selectPrompt(cat, idx, card) {
+  selectedPrompt = { cat, idx };
+  document.querySelectorAll('.prompt-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+
+  const prompt = DATA[cat].prompts[idx];
+  const builder = document.getElementById('builder');
+  builder.classList.add('visible');
+  document.getElementById('builderTitle').textContent = prompt.title;
+  document.getElementById('builderDesc').textContent = prompt.desc;
+  document.getElementById('outputBox').classList.remove('visible');
+
+  // Build fields
+  const grid = document.getElementById('fieldsGrid');
+  grid.innerHTML = '';
+
+  prompt.fields.forEach(f => {
+    const div = document.createElement('div');
+    div.className = 'field-group';
+    div.innerHTML = `<label>${f.label}</label>`;
+    if (f.type === 'textarea') {
+      div.innerHTML += `<textarea id="field_${f.id}" rows="3" placeholder="${f.placeholder}"></textarea>`;
+    } else {
+      div.innerHTML += `<input type="text" id="field_${f.id}" placeholder="${f.placeholder}">`;
+    }
+    grid.appendChild(div);
+  });
+
+  builder.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function generatePrompt() {
+  if (!selectedPrompt) return;
+  const { cat, idx } = selectedPrompt;
+  const prompt = DATA[cat].prompts[idx];
+
+  const values = {};
+  prompt.fields.forEach(f => {
+    const el = document.getElementById(`field_${f.id}`);
+    values[f.id] = el ? el.value.trim() || `[${f.label}]` : '';
+  });
+
+  const result = prompt.template(values);
+  document.getElementById('outputText').textContent = result;
+  const box = document.getElementById('outputBox');
+  box.classList.add('visible');
+  document.getElementById('copyBtn').textContent = 'Copiar';
+  document.getElementById('copyBtn').classList.remove('copied');
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function copyToClipboard(text, btnId) {
+  const btn = document.getElementById(btnId);
+  const success = () => {
+    btn.textContent = '✓ Copiado';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copiar'; btn.classList.remove('copied'); }, 2000);
+  };
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(success).catch(() => fallbackCopy(text, success));
+  } else {
+    fallbackCopy(text, success);
+  }
+}
+
+function fallbackCopy(text, callback) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try {
+    document.execCommand('copy');
+    if (callback) callback();
+  } catch(e) {
+    alert('Seleccioná el texto del prompt y usá Ctrl+C para copiar.');
+  }
+  document.body.removeChild(ta);
+}
+
+function copyPrompt() {
+  const text = document.getElementById('outputText').textContent;
+  copyToClipboard(text, 'copyBtn');
+}
+
+function resetBuilder() {
+  if (!selectedPrompt) return;
+  const { cat, idx } = selectedPrompt;
+  const prompt = DATA[cat].prompts[idx];
+  prompt.fields.forEach(f => {
+    const el = document.getElementById(`field_${f.id}`);
+    if (el) el.value = '';
+  });
+  document.getElementById('outputBox').classList.remove('visible');
+}
+
+function generateLibre() {
+  const C = document.getElementById('libreC').value.trim();
+  const R = document.getElementById('libreR').value.trim();
+  const E = document.getElementById('libreE').value.trim();
+  const F = document.getElementById('libreF').value.trim();
+
+  if (!C && !R && !E && !F) return;
+
+  const result = `${R ? `Actuá como: ${R}\n\n` : ''}${C ? `Contexto: ${C}\n\n` : ''}${E ? `Tarea: ${E}\n\n` : ''}${F ? `Formato de respuesta: ${F}` : ''}`.trim();
+
+  document.getElementById('libreOutputText').textContent = result;
+  const box = document.getElementById('libreOutputBox');
+  box.classList.add('visible');
+  document.getElementById('libreCopyBtn').textContent = 'Copiar';
+  document.getElementById('libreCopyBtn').classList.remove('copied');
+}
+
+function copyLibre() {
+  const text = document.getElementById('libreOutputText').textContent;
+  copyToClipboard(text, 'libreCopyBtn');
+}
+
+function resetLibre() {
+  ['libreC','libreR','libreE','libreF'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('libreOutputBox').classList.remove('visible');
+}
+
+init();
+</script>
+</body>
+</html>
