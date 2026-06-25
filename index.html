@@ -10,6 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:#F7F5F0;color:#2C2C2C}
@@ -29,6 +30,8 @@ button:hover{opacity:.92}
 <script>
 firebase.initializeApp({apiKey:"AIzaSyB-iyVLyhEKCdjMHPQtNCa2e2QWPD4AKG4",authDomain:"prompt-studio-pca.firebaseapp.com",projectId:"prompt-studio-pca",storageBucket:"prompt-studio-pca.firebasestorage.app",messagingSenderId:"693126048317",appId:"1:693126048317:web:186fd29198642cb5f99854"});
 const db=firebase.firestore();
+const auth=firebase.auth();
+const googleProvider=new firebase.auth.GoogleAuthProvider();
 </script>
 <script type="text/babel">
 const {useState,useEffect}=React;
@@ -551,7 +554,8 @@ f=>"Reporte: \""+f.reporte+"\". Datos: \""+f.datos_d+"\". Audiencia: "+f.aud_r+"
 const S={loginWrap:{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh",padding:20,background:"linear-gradient(135deg,#4A3F35 0%,#5C4F3E 50%,#3D3429 100%)"},loginCard:{background:"#fff",borderRadius:16,padding:"48px 40px",maxWidth:420,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"},inp:{width:"100%",padding:"12px 16px",border:"1.5px solid #E0D8CC",borderRadius:10,fontSize:14,fontFamily:"inherit",outline:"none",boxSizing:"border-box",background:"#FAFAF8"},lb:{display:"block",fontSize:12,fontWeight:600,color:"#6B5E4F",marginBottom:6},btnP:{width:"100%",padding:"14px",background:"linear-gradient(135deg,#C8A951,#B8963E)",color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:600,cursor:"pointer"},btnS:{width:"100%",padding:"12px",background:"transparent",color:"#8B7D6B",border:"1.5px solid #E0D8CC",borderRadius:10,fontSize:13,fontWeight:500,cursor:"pointer",marginTop:12},err:{color:"#D4694A",fontSize:13,marginTop:8,fontWeight:500},tag:c=>({display:"inline-block",padding:"2px 8px",borderRadius:5,fontSize:10,fontWeight:600,background:c+"18",color:c})};
 
 function App(){
-const [screen,setScreen]=useState("code");
+const [screen,setScreen]=useState("plan");
+const [plan,setPlan]=useState(null);
 const [cc,setCC]=useState(null);
 const [cfg,setCfg]=useState(null);
 const [users,setUsers]=useState([]);
@@ -571,12 +575,46 @@ const [nm,setNm]=useState("");
 const [em,setEm]=useState("");
 const [adm,setAdm]=useState(false);
 const [ap,setAp]=useState("");
+const [authMode,setAuthMode]=useState("login");
+const [pw,setPw]=useState("");
 const [showAdm,setSA]=useState(false);
 
 const copy=(t,s)=>{try{const a=document.createElement("textarea");a.value=t;a.style.position="fixed";a.style.left="-9999px";document.body.appendChild(a);a.select();document.execCommand("copy");document.body.removeChild(a);s(true);setTimeout(()=>s(false),2000);}catch(e){}};
 const fbUsers=async(code)=>{try{const sn=await db.collection("empresas").doc(code).collection("usuarios").get();return sn.docs.map(d=>({id:d.id,...d.data()}));}catch{return[];}};
 
-// ─── CODE SCREEN ───
+// ─── PLAN SELECTION SCREEN ───
+if(screen==="plan"){
+const plans=[
+{id:"profesional",icon:"👤",title:"Profesional",sub:"Acceso individual",desc:"Para profesionales independientes que quieren potenciar su productividad con IA.",color:"#C8A951"},
+{id:"equipo",icon:"👥",title:"Equipo",sub:"Acceso con código",desc:"Para equipos de trabajo que necesitan herramientas compartidas de productividad.",color:"#5B8C5A"},
+{id:"empresa",icon:"🏢",title:"Empresa",sub:"Acceso con código",desc:"Para organizaciones que implementan IA en sus procesos operativos.",color:"#4A90D9"}
+];
+return(<div style={S.loginWrap}><div style={{...S.loginCard,maxWidth:520,padding:"40px 36px"}}>
+<div style={{textAlign:"center",marginBottom:32}}>
+<div style={{fontSize:11,color:"#C8A951",fontWeight:600,letterSpacing:2}}>TALENTO IMPULSA</div>
+<div style={{fontSize:22,fontWeight:700,color:"#4A3F35"}}>Prompt Studio PCA™</div>
+<div style={{fontSize:13,color:"#8B7D6B",marginTop:8}}>Seleccioná tu tipo de acceso</div>
+<div style={{marginTop:10}}><span style={S.tag("#5B8C5A")}>Método PCA™ · C.R.E.F.</span></div></div>
+<div style={{display:"flex",flexDirection:"column",gap:10}}>
+{plans.map(p=>(<div key={p.id} style={{border:"1.5px solid #EDE8E0",borderRadius:12,padding:"16px 20px",cursor:"pointer",transition:"all .15s",display:"flex",alignItems:"center",gap:16,background:plan===p.id?"#FAFAF8":"#fff"}} onClick={()=>{
+  setPlan(p.id);
+  if(p.id==="profesional"){setCC(null);setCfg({company:"Profesional",maxUsers:9999,adminPass:""});setScreen("login");}
+  else{setScreen("code");}
+}}
+onMouseEnter={e=>{e.currentTarget.style.borderColor=p.color;e.currentTarget.style.background="#FAFAF8";}}
+onMouseLeave={e=>{e.currentTarget.style.borderColor="#EDE8E0";e.currentTarget.style.background="#fff";}}>
+<div style={{fontSize:32,width:48,textAlign:"center"}}>{p.icon}</div>
+<div style={{flex:1}}>
+<div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:15,fontWeight:700,color:"#4A3F35"}}>{p.title}</span><span style={S.tag(p.color)}>{p.sub}</span></div>
+<div style={{fontSize:12,color:"#8B7D6B",marginTop:3}}>{p.desc}</div>
+</div>
+<div style={{color:"#C8A951",fontSize:18}}>→</div>
+</div>))}
+</div>
+<div style={{textAlign:"center",marginTop:20,fontSize:10,color:"#B0A898"}}>64 prompts profesionales · 8 categorías · Constructor libre C.R.E.F.</div>
+</div></div>);}
+
+// ─── CODE SCREEN (Equipo / Empresa) ───
 if(screen==="code"){
 
 const go=async()=>{setError("");setLoading(true);const u=code.trim().toUpperCase();
@@ -588,60 +626,115 @@ return(<div style={S.loginWrap}><div style={S.loginCard}>
 <div style={{textAlign:"center",marginBottom:32}}>
 <div style={{fontSize:11,color:"#C8A951",fontWeight:600,letterSpacing:2}}>TALENTO IMPULSA</div>
 <div style={{fontSize:22,fontWeight:700,color:"#4A3F35"}}>Prompt Studio PCA™</div>
-<div style={{fontSize:13,color:"#8B7D6B",marginTop:8}}>Ingresá el código de acceso de tu empresa</div></div>
+<div style={{fontSize:13,color:"#8B7D6B",marginTop:8}}>Ingresá el código de acceso de tu {plan==="equipo"?"equipo":"empresa"}</div></div>
 <div style={{display:"flex",flexDirection:"column",gap:16}}>
 <div><label style={S.lb}>Código de acceso</label><input style={{...S.inp,textAlign:"center",fontSize:18,letterSpacing:3,fontWeight:700}} value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="XXXXXXXX" maxLength={20} onKeyDown={e=>{if(e.key==="Enter")go();}}/></div>
 {error&&<div style={S.err}>{error}</div>}
 <button style={S.btnP} onClick={go} disabled={loading}>{loading?"Verificando...":"Ingresar"}</button>
 <div style={{fontSize:10,color:"#B0A898",textAlign:"center"}}>¿No tenés código? Consultá a tu referente.</div>
+<div style={{textAlign:"center",marginTop:4}}><span style={{fontSize:11,color:"#C8A951",cursor:"pointer",textDecoration:"underline"}} onClick={()=>{setScreen("plan");setPlan(null);setError("");setCode("");}}>← Volver a selección de plan</span></div>
 </div></div></div>);}
 
-// ─── LOGIN SCREEN ───
+// ─── LOGIN SCREEN (Firebase Auth) ───
 if(screen==="login"){
 
-const go=async()=>{setError("");
-if(adm){if(ap===cfg.adminPass){setCU({name:"Admin",email:"admin",isAdmin:true});setScreen("app");}else setError("Contraseña incorrecta");return;}
-if(!nm.trim()||!em.trim()){setError("Completá nombre y email");return;}
-const ex=users.find(u=>u.email?.toLowerCase()===em.trim().toLowerCase());
-if(ex){setCU(ex);setScreen("app");return;}
-if(users.length>=cfg.maxUsers){setError("Límite de "+cfg.maxUsers+" usuarios alcanzado.");return;}
-setLoading(true);const nu={name:nm.trim(),email:em.trim().toLowerCase(),joinedAt:new Date().toISOString()};
-try{await db.collection("empresas").doc(cc).collection("usuarios").add(nu);const u=await fbUsers(cc);setUsers(u);setCU(nu);setLoading(false);setScreen("app");}
-catch{setError("Error al registrar.");setLoading(false);}};
+const handleAuth=async(authUser)=>{
+  const email=authUser.email;
+  const name=authUser.displayName||email.split("@")[0];
+  const uid=authUser.uid;
+  // Professional plan: no company, just auth
+  if(plan==="profesional"){
+    setCU({name,email,uid,isAdmin:false});setScreen("app");setLoading(false);return;
+  }
+  // Team/Enterprise: link to company
+  const usrs=await fbUsers(cc);
+  setUsers(usrs);
+  const ex=usrs.find(u=>u.uid===uid);
+  if(ex){setCU(ex);setScreen("app");setLoading(false);return;}
+  // New user
+  if(usrs.length>=cfg.maxUsers){setError("Límite de "+cfg.maxUsers+" usuarios alcanzado. Contactá a tu administrador.");setLoading(false);return;}
+  const nu={name,email:email.toLowerCase(),uid,joinedAt:new Date().toISOString()};
+  try{await db.collection("empresas").doc(cc).collection("usuarios").add(nu);const u2=await fbUsers(cc);setUsers(u2);setCU(nu);setScreen("app");}
+  catch(e){setError("Error al registrar usuario.");}
+  setLoading(false);
+};
+
+const goEmail=async()=>{
+  setError("");setLoading(true);
+  if(!em.trim()||!pw){setError("Completá email y contraseña");setLoading(false);return;}
+  try{
+    let result;
+    if(authMode==="login"){result=await auth.signInWithEmailAndPassword(em.trim(),pw);}
+    else{result=await auth.createUserWithEmailAndPassword(em.trim(),pw);}
+    await handleAuth(result.user);
+  }catch(err){
+    const msgs={"auth/invalid-email":"Email inválido.","auth/user-not-found":"No existe cuenta con ese email. ¿Querés crear una?","auth/wrong-password":"Contraseña incorrecta.","auth/invalid-credential":"Email o contraseña incorrectos.","auth/email-already-in-use":"Ya existe una cuenta con ese email.","auth/weak-password":"La contraseña debe tener al menos 6 caracteres.","auth/too-many-requests":"Demasiados intentos. Esperá un momento."};
+    setError(msgs[err.code]||err.message);setLoading(false);
+  }
+};
+
+const goGoogle=async()=>{
+  setError("");setLoading(true);
+  try{const result=await auth.signInWithPopup(googleProvider);await handleAuth(result.user);}
+  catch(err){
+    if(err.code!=="auth/popup-closed-by-user")setError("Error con Google: "+err.message);
+    setLoading(false);
+  }
+};
+
+const goAdmin=async()=>{
+  setError("");
+  if(ap===cfg.adminPass){setCU({name:"Admin",email:"admin",isAdmin:true});setScreen("app");}
+  else setError("Contraseña de administración incorrecta");
+};
+
+const backToCode=()=>{setCC(null);setCfg(null);setUsers([]);setScreen("plan");setPlan(null);setCode("");setEm("");setPw("");setAdm(false);setAp("");setAuthMode("login");};
+
 return(<div style={S.loginWrap}><div style={S.loginCard}>
 <div style={{textAlign:"center",marginBottom:32}}>
 <div style={{fontSize:11,color:"#C8A951",fontWeight:600,letterSpacing:2}}>TALENTO IMPULSA</div>
 <div style={{fontSize:22,fontWeight:700,color:"#4A3F35"}}>Prompt Studio PCA™</div>
-<div style={{fontSize:15,fontWeight:600,color:"#C8A951",marginTop:8}}>{cfg.company}</div>
+<div style={{fontSize:15,fontWeight:600,color:"#C8A951",marginTop:8}}>{plan==="profesional"?"Plan Profesional":cfg.company}</div>
 <div style={{marginTop:10}}><span style={S.tag("#5B8C5A")}>Método PCA™ · C.R.E.F.</span></div></div>
-{!adm?(<div style={{display:"flex",flexDirection:"column",gap:16}}>
-<div><label style={S.lb}>Tu nombre completo</label><input style={S.inp} value={nm} onChange={e=>setNm(e.target.value)} placeholder="Ej: María González"/></div>
-<div><label style={S.lb}>Tu email corporativo</label><input style={S.inp} type="email" value={em} onChange={e=>setEm(e.target.value)} placeholder="Ej: maria@empresa.com"/></div>
+{!adm?(<div style={{display:"flex",flexDirection:"column",gap:14}}>
+
+<button style={{width:"100%",padding:"12px",background:"#fff",border:"1.5px solid #E0D8CC",borderRadius:10,fontSize:14,fontWeight:500,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,color:"#4A3F35"}} onClick={goGoogle} disabled={loading}>
+<svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.9 33.5 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34 5.7 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.2-2.7-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 15.5 18.8 12 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7C34 5.7 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.6 13.4-4.4l-6.2-5.2C29.2 35.8 26.7 36 24 36c-5.3 0-9.8-3.5-11.3-8.2l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.4l6.2 5.2C36.7 39.2 44 34 44 24c0-1.3-.2-2.7-.4-3.9z"/></svg>
+{loading?"Conectando...":"Continuar con Google"}</button>
+
+<div style={{display:"flex",alignItems:"center",gap:10,margin:"2px 0"}}><div style={{flex:1,height:1,background:"#E0D8CC"}}/><span style={{fontSize:11,color:"#B0A898"}}>o con email</span><div style={{flex:1,height:1,background:"#E0D8CC"}}/></div>
+
+<div><label style={S.lb}>Email</label><input style={S.inp} type="email" value={em} onChange={e=>setEm(e.target.value)} placeholder="tu@email.com"/></div>
+<div><label style={S.lb}>Contraseña</label><input style={S.inp} type="password" value={pw} onChange={e=>setPw(e.target.value)} placeholder={authMode==="login"?"Tu contraseña":"Mínimo 6 caracteres"} onKeyDown={e=>{if(e.key==="Enter")goEmail();}}/></div>
 {error&&<div style={S.err}>{error}</div>}
-<button style={S.btnP} onClick={go} disabled={loading}>{loading?"Registrando...":"Ingresar"}</button>
-<button style={S.btnS} onClick={()=>{setAdm(true);setError("");}}>Acceso administrador</button>
+<button style={S.btnP} onClick={goEmail} disabled={loading}>{loading?"Verificando...":(authMode==="login"?"Iniciar sesión":"Crear cuenta")}</button>
+<div style={{textAlign:"center"}}><span style={{fontSize:12,color:"#C8A951",cursor:"pointer"}} onClick={()=>{setAuthMode(authMode==="login"?"register":"login");setError("");}}>{authMode==="login"?"¿Primera vez? Crear cuenta":"¿Ya tenés cuenta? Iniciar sesión"}</span></div>
+{plan!=="profesional"&&(<React.Fragment>
+<div style={{borderTop:"1px solid #EDE8E0",paddingTop:12}}>
+<button style={{...S.btnS,marginTop:0,fontSize:11}} onClick={()=>{setAdm(true);setError("");}}>⚙ Acceso administrador</button></div>
 <div style={{fontSize:11,color:"#B0A898",textAlign:"center"}}>{users.length}/{cfg.maxUsers} usuarios</div>
-<div style={{textAlign:"center",marginTop:4}}><span style={{fontSize:11,color:"#C8A951",cursor:"pointer",textDecoration:"underline"}} onClick={()=>{setCC(null);setCfg(null);setUsers([]);setScreen("code");setCode("");setNm("");setEm("");setAdm(false);setAp("");}}>← Cambiar empresa</span></div>
+</React.Fragment>)}
+<div style={{textAlign:"center"}}><span style={{fontSize:11,color:"#C8A951",cursor:"pointer",textDecoration:"underline"}} onClick={backToCode}>← {plan==="profesional"?"Volver":"Cambiar empresa"}</span></div>
 </div>):(<div style={{display:"flex",flexDirection:"column",gap:16}}>
-<div><label style={S.lb}>Contraseña administración</label><input style={S.inp} type="password" value={ap} onChange={e=>setAp(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")go();}}/></div>
+<div><label style={S.lb}>Contraseña de administración</label><input style={S.inp} type="password" value={ap} onChange={e=>setAp(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")goAdmin();}}/></div>
 {error&&<div style={S.err}>{error}</div>}
-<button style={S.btnP} onClick={go}>Ingresar como admin</button>
+<button style={S.btnP} onClick={goAdmin}>Ingresar como admin</button>
 <button style={S.btnS} onClick={()=>{setAdm(false);setError("");}}>Volver</button>
-<div style={{textAlign:"center",marginTop:4}}><span style={{fontSize:11,color:"#C8A951",cursor:"pointer",textDecoration:"underline"}} onClick={()=>{setCC(null);setCfg(null);setUsers([]);setScreen("code");setCode("");setNm("");setEm("");setAdm(false);setAp("");}}>← Cambiar empresa</span></div>
+<div style={{textAlign:"center",marginTop:4}}><span style={{fontSize:11,color:"#C8A951",cursor:"pointer",textDecoration:"underline"}} onClick={backToCode}>← Cambiar empresa</span></div>
 </div>)}</div></div>);}
 
 // ─── MAIN APP ───
 const ck=Object.keys(CATEGORIES);const ac=aCat?CATEGORIES[aCat]:null;
 const ap_=selP?CATEGORIES[selP.ck].prompts[selP.i]:null;
 const tot=Object.values(CATEGORIES).reduce((s,c)=>s+c.prompts.length,0);
-const logout=()=>{setCU(null);setACat(null);setSelP(null);setFV({});setGenP("");setSA(false);setScreen("login");setCode("");setNm("");setEm("");setAdm(false);setAp("");};
-const fullLogout=()=>{setCU(null);setACat(null);setSelP(null);setFV({});setGenP("");setSA(false);setCC(null);setCfg(null);setUsers([]);setScreen("code");setCode("");setNm("");setEm("");setAdm(false);setAp("");};
+const logout=()=>{auth.signOut();setCU(null);setACat(null);setSelP(null);setFV({});setGenP("");setSA(false);setScreen("plan");setPlan(null);setCode("");setNm("");setEm("");setPw("");setAdm(false);setAp("");setAuthMode("login");};
+const fullLogout=()=>{auth.signOut();setCU(null);setACat(null);setSelP(null);setFV({});setGenP("");setSA(false);setCC(null);setCfg(null);setUsers([]);setScreen("plan");setPlan(null);setCode("");setNm("");setEm("");setPw("");setAdm(false);setAp("");setAuthMode("login");};
 const qS=ap_?calcQ(ap_.fields,fV):0;
 
 return(<div style={{fontFamily:"'Segoe UI',system-ui,sans-serif",background:"#F7F5F0",minHeight:"100vh",color:"#2C2C2C"}}>
 {/* HEADER */}
 <div style={{background:"linear-gradient(135deg,#4A3F35,#5C4F3E)",padding:"14px 20px",color:"#fff",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
-<div><div style={{fontSize:10,color:"#C8A951",fontWeight:600,letterSpacing:1.5,textTransform:"uppercase"}}>{cfg.company}</div><h1 style={{fontSize:17,fontWeight:700,margin:0}}>Prompt Studio PCA™</h1></div>
+<div><div style={{fontSize:10,color:"#C8A951",fontWeight:600,letterSpacing:1.5,textTransform:"uppercase"}}>{plan==="profesional"?"Plan Profesional":cfg.company}</div><h1 style={{fontSize:17,fontWeight:700,margin:0}}>Prompt Studio PCA™</h1></div>
 <div style={{display:"flex",alignItems:"center",gap:6}}>
 <span style={{background:"rgba(200,169,81,0.15)",padding:"4px 10px",borderRadius:20,color:"#C8A951",fontSize:11}}>{cu?.isAdmin?"⚙ Admin":cu?.name}</span>
 {cu?.isAdmin&&<button style={{background:"rgba(255,255,255,0.1)",border:"none",color:"#ddd",padding:"4px 10px",borderRadius:8,cursor:"pointer",fontSize:11}} onClick={()=>setSA(!showAdm)}>{showAdm?"Prompts":"Admin"}</button>}
